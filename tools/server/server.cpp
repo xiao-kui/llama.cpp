@@ -93,6 +93,8 @@ struct slot_params {
     bool cache_prompt  = true; // remember the prompt to avoid reprocessing all prompt
     bool return_tokens = false;
 
+    bool include_stop_str_in_output = false;
+
     int32_t n_keep    =  0; // number of tokens to keep from initial prompt
     int32_t n_discard =  0; // number of tokens after n_keep that may be discarded when shifting context, 0 defaults to half
     int32_t n_predict = -1; // new tokens to predict
@@ -464,6 +466,10 @@ struct server_task {
                     }
                 }
             }
+
+            //kui.xiao
+            const auto & include_stop_str_in_output = json_value(data, "include_stop_str_in_output", false);
+            params.include_stop_str_in_output = include_stop_str_in_output;
         }
 
         {
@@ -1277,6 +1283,8 @@ struct server_slot {
     stop_type stop;
 
     std::string stopping_word;
+
+    bool include_stop_str_in_output = false;
 
     // sampling
     json json_schema;
@@ -2251,11 +2259,14 @@ struct server_context {
             bool send_text = true;
 
             size_t stop_pos = slot.find_stopping_strings(str_test, token_str.size(), true);
-            if (stop_pos != std::string::npos) {
-                slot.generated_text.erase(
-                    slot.generated_text.begin() + pos + stop_pos,
-                    slot.generated_text.end());
-                pos = std::min(slot.n_sent_text, slot.generated_text.size());
+            if ((stop_pos != std::string::npos)) {
+                //kui.xiao
+                if (!slot.params.include_stop_str_in_output){
+                    slot.generated_text.erase(
+                        slot.generated_text.begin() + pos + stop_pos,
+                        slot.generated_text.end());
+                    pos = std::min(slot.n_sent_text, slot.generated_text.size());
+                }
             } else if (slot.has_next_token) {
                 stop_pos = slot.find_stopping_strings(str_test, token_str.size(), false);
                 send_text = stop_pos == std::string::npos;

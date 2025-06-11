@@ -606,6 +606,12 @@ static json oaicompat_chat_params_parse(
         llama_params["stop"] = json_value(body, "stop", json::array());
     }
 
+    //kui.xiao
+    if (body.contains("include_stop_str_in_output") && body.at("include_stop_str_in_output").is_boolean()) {
+        bool include_stop_str_in_output = json_value(body, "include_stop_str_in_output", false);
+        llama_params["include_stop_str_in_output"] = include_stop_str_in_output;
+    }
+
     auto json_schema = json_value(body, "json_schema", json());
     auto grammar = json_value(body, "grammar", std::string());
     if (!json_schema.is_null() && !grammar.empty()) {
